@@ -83,14 +83,31 @@ public class HttpConnectionPool {
 
     /**
      * 获取httpClient单例，并且第一次获取，启动连接池管理任务
-     *
+     * <p>
+     *    默认重试handler
+     * </p>
+     * @param config http连接池客户端
      * @return
      */
     public static CloseableHttpClient getHttpClientInstance(PoolConfig config) {
+        // 请求失败时,进行请求重试
+        HttpRequestRetryHandler handler = new SimpleHttpRequestRetryHandler();
+        return getHttpClientInstance(config);
+    }
+
+
+    /**
+     * 获取httpClient单例，并且第一次获取，启动连接池管理任务
+     *
+     * @param config  http连接池客户端
+     * @param handler 重试handler
+     * @return
+     */
+    public static CloseableHttpClient getHttpClientInstance(PoolConfig config, HttpRequestRetryHandler handler) {
         if (httpClient == null) {
             synchronized (HTTP_CLIENT_LOCK) {
                 if (httpClient == null) {
-                    httpClient = createHttpClient(config);
+                    httpClient = createHttpClient(config, handler);
                     startManagerMonitor(config);
                 }
             }
@@ -125,7 +142,7 @@ public class HttpConnectionPool {
      *
      * @return
      */
-    private static CloseableHttpClient createHttpClient(PoolConfig config) {
+    private static CloseableHttpClient createHttpClient(PoolConfig config, HttpRequestRetryHandler handler) {
 
         ConnectionSocketFactory plainSocketFactory = PlainConnectionSocketFactory.getSocketFactory();
         LayeredConnectionSocketFactory sslSocketFactory = SSLConnectionSocketFactory.getSocketFactory();
@@ -138,8 +155,6 @@ public class HttpConnectionPool {
         connectionManager.setMaxTotal(config.getMaxConnections());
         // 设置路由默认最大连接数
         connectionManager.setDefaultMaxPerRoute(config.getMaxPerRouteConnections());
-        // 请求失败时,进行请求重试
-        HttpRequestRetryHandler handler = new SimpleHttpRequestRetryHandler();
 
         CloseableHttpClient client = HttpClients.custom().setConnectionManager(connectionManager).setRetryHandler(handler).build();
         return client;
