@@ -55,12 +55,27 @@ public class HttpClient<T> {
 
     private CloseableHttpClient closeableHttpClient;
 
+    /**
+     * 连接超时时间
+     */
+    private int connectionTimeout;
+
+    /**
+     * 读取数据超时时间
+     */
+    private int socketReadTimeout;
+
+
     public HttpClient() {
         closeableHttpClient = HttpConnectionPool.getHttpClientInstance();
+        connectionTimeout = CONNECT_TIMEOUT;
+        socketReadTimeout = SOCKET_TIMEOUT;
     }
 
     public HttpClient(PoolConfig config) {
         closeableHttpClient = HttpConnectionPool.getHttpClientInstance(config);
+        connectionTimeout = CONNECT_TIMEOUT;
+        socketReadTimeout = SOCKET_TIMEOUT;
     }
 
     /**
@@ -304,7 +319,7 @@ public class HttpClient<T> {
         HttpGet httpGet;
         try {
             URIBuilder uriBuilder = new URIBuilder(url);
-            /** 设置http get请求参数 */
+            /* 设置http get请求参数 */
             if (MapUtils.isNotEmpty(params)) {
                 List<NameValuePair> nvps = new ArrayList<>();
                 for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -314,7 +329,7 @@ public class HttpClient<T> {
             }
 
             httpGet = new HttpGet(uriBuilder.build());
-            /** 设置 http header */
+            /* 设置 http header */
             if (MapUtils.isNotEmpty(headers)) {
                 for (Map.Entry<String, String> entry : headers.entrySet()) {
                     httpGet.addHeader(new BasicHeader(entry.getKey(), entry.getValue()));
@@ -334,11 +349,27 @@ public class HttpClient<T> {
     /**
      * 对http 网络连接进行基本设置
      *
-     * @param httpRequestBase
+     * @param httpRequestBase http
      */
     private void setRequestConfig(HttpRequestBase httpRequestBase) {
-        RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(CONNECT_TIMEOUT)
-                .setConnectTimeout(CONNECT_TIMEOUT).setSocketTimeout(SOCKET_TIMEOUT).build();
+        RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(connectionTimeout)
+                .setConnectTimeout(connectionTimeout).setSocketTimeout(socketReadTimeout).build();
         httpRequestBase.setConfig(requestConfig);
+    }
+
+    public int getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    public int getSocketReadTimeout() {
+        return socketReadTimeout;
+    }
+
+    public void setSocketReadTimeout(int socketReadTimeout) {
+        this.socketReadTimeout = socketReadTimeout;
     }
 }
