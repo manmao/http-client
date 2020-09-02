@@ -7,6 +7,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
@@ -74,6 +75,19 @@ public class HttpClient<T> {
 
     public HttpClient(PoolConfig config) {
         closeableHttpClient = HttpConnectionPool.getHttpClientInstance(config);
+        connectionTimeout = CONNECT_TIMEOUT;
+        socketReadTimeout = SOCKET_TIMEOUT;
+    }
+
+    /**
+     * 自定义pool配置和重试handler
+     *
+     * @param config  路由配置
+     * @param requestRetryHandler  重试handler
+     *  @see com.chinaway.http.client.SimpleHttpRequestRetryHandler
+     */
+    public HttpClient(PoolConfig config, HttpRequestRetryHandler requestRetryHandler) {
+        closeableHttpClient = HttpConnectionPool.getHttpClientInstance(config, requestRetryHandler);
         connectionTimeout = CONNECT_TIMEOUT;
         socketReadTimeout = SOCKET_TIMEOUT;
     }
@@ -355,21 +369,5 @@ public class HttpClient<T> {
         RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(connectionTimeout)
                 .setConnectTimeout(connectionTimeout).setSocketTimeout(socketReadTimeout).build();
         httpRequestBase.setConfig(requestConfig);
-    }
-
-    public int getConnectionTimeout() {
-        return connectionTimeout;
-    }
-
-    public void setConnectionTimeout(int connectionTimeout) {
-        this.connectionTimeout = connectionTimeout;
-    }
-
-    public int getSocketReadTimeout() {
-        return socketReadTimeout;
-    }
-
-    public void setSocketReadTimeout(int socketReadTimeout) {
-        this.socketReadTimeout = socketReadTimeout;
     }
 }

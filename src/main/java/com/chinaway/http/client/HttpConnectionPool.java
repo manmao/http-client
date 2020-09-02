@@ -92,7 +92,7 @@ public class HttpConnectionPool {
     public static CloseableHttpClient getHttpClientInstance(PoolConfig config) {
         // 请求失败时,进行请求重试
         HttpRequestRetryHandler handler = new SimpleHttpRequestRetryHandler();
-        return getHttpClientInstance(config);
+        return getHttpClientInstance(config, handler);
     }
 
 
