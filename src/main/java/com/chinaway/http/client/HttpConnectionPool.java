@@ -11,6 +11,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.omg.CORBA.TIMEOUT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,11 +151,13 @@ public class HttpConnectionPool {
                 .register("http", plainSocketFactory)
                 .register("https", sslSocketFactory).build();
 
-        connectionManager = new PoolingHttpClientConnectionManager(registry);
+        connectionManager = new PoolingHttpClientConnectionManager(registry, null, null, null, config.getExpiredTime(), TimeUnit.SECONDS);
         // 设置连接参数 最大连接数
         connectionManager.setMaxTotal(config.getMaxConnections());
         // 设置路由默认最大连接数
         connectionManager.setDefaultMaxPerRoute(config.getMaxPerRouteConnections());
+
+
 
         CloseableHttpClient client = HttpClients.custom().setConnectionManager(connectionManager).setRetryHandler(handler).build();
         return client;
