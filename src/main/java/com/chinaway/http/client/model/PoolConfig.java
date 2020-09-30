@@ -29,6 +29,16 @@ public class PoolConfig {
      */
     private long expiredTime;
 
+    /**
+     * 连接超时时间
+     */
+    private int connectionTimeout;
+
+    /**
+     * 读取数据超时时间
+     */
+    private int socketReadTimeout;
+
     public PoolConfig() {
     }
 
@@ -69,5 +79,21 @@ public class PoolConfig {
 
     public void setExpiredTime(long expiredTime) {
         this.expiredTime = expiredTime;
+    }
+
+    public int getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    public int getSocketReadTimeout() {
+        return socketReadTimeout;
+    }
+
+    public void setSocketReadTimeout(int socketReadTimeout) {
+        this.socketReadTimeout = socketReadTimeout;
     }
 }

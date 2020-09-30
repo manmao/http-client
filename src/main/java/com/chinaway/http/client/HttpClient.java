@@ -75,8 +75,8 @@ public class HttpClient<T> {
 
     public HttpClient(PoolConfig config) {
         closeableHttpClient = HttpConnectionPool.getHttpClientInstance(config);
-        connectionTimeout = CONNECT_TIMEOUT;
-        socketReadTimeout = SOCKET_TIMEOUT;
+        connectionTimeout = config.getConnectionTimeout() == 0 ? CONNECT_TIMEOUT :config.getConnectionTimeout();
+        socketReadTimeout = config.getSocketReadTimeout() == 0 ? SOCKET_TIMEOUT:config.getSocketReadTimeout();
     }
 
     /**
@@ -88,8 +88,8 @@ public class HttpClient<T> {
      */
     public HttpClient(PoolConfig config, HttpRequestRetryHandler requestRetryHandler) {
         closeableHttpClient = HttpConnectionPool.getHttpClientInstance(config, requestRetryHandler);
-        connectionTimeout = CONNECT_TIMEOUT;
-        socketReadTimeout = SOCKET_TIMEOUT;
+        connectionTimeout = config.getConnectionTimeout() == 0 ? CONNECT_TIMEOUT :config.getConnectionTimeout();
+        socketReadTimeout = config.getSocketReadTimeout() == 0 ? SOCKET_TIMEOUT:config.getSocketReadTimeout();
     }
 
     /**
