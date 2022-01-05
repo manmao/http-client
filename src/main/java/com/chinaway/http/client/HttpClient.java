@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public class HttpClient<T> {
 
-    private static Logger logger = LoggerFactory.getLogger(HttpClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(HttpClient.class);
 
     /**
      * 默认字符编码
@@ -54,17 +54,17 @@ public class HttpClient<T> {
      */
     private static final int SOCKET_TIMEOUT = 5000;
 
-    private CloseableHttpClient closeableHttpClient;
+    private final CloseableHttpClient closeableHttpClient;
 
     /**
      * 连接超时时间
      */
-    private int connectionTimeout;
+    private final int connectionTimeout;
 
     /**
      * 读取数据超时时间
      */
-    private int socketReadTimeout;
+    private final int socketReadTimeout;
 
 
     public HttpClient() {
@@ -132,7 +132,6 @@ public class HttpClient<T> {
         }
         HttpGet httpGet = this.buildHttpGetInstance(url, params, headers);
         String result = this.executeRequest(httpGet);
-
         try {
             return JSON.parseObject(result, getClass().getGenericSuperclass());
         } catch (Exception e) {
@@ -276,10 +275,10 @@ public class HttpClient<T> {
     /**
      * 构造HTTP POST 对象
      *
-     * @param url
-     * @param params
-     * @param headers
-     * @return
+     * @param url     请求地址
+     * @param params  参数
+     * @param headers header
+     * @return post实例
      */
     private HttpPost buildHttpPostInstance(String url, Map<String, String> params, String body, Map<String, String> headers) {
 

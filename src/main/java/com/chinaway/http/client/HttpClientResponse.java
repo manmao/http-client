@@ -3,7 +3,6 @@ package com.chinaway.http.client;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.chinaway.http.client.model.Page;
 import com.chinaway.http.client.model.PoolConfig;
 import com.chinaway.http.client.model.Response;
 import org.slf4j.Logger;
@@ -20,9 +19,9 @@ import java.util.Map;
  */
 public class HttpClientResponse<T> {
 
-    private static Logger logger = LoggerFactory.getLogger(HttpClientResponse.class);
+    private static final Logger logger = LoggerFactory.getLogger(HttpClientResponse.class);
 
-    private HttpClient<JSONObject> client;
+    private final HttpClient<JSONObject> client;
 
     public HttpClientResponse() {
         client = new HttpClient<>();

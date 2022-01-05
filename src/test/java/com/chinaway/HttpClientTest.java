@@ -1,6 +1,7 @@
 package com.chinaway;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.chinaway.http.client.HttpClient;
 import com.chinaway.http.client.HttpClientResponse;
 import com.chinaway.http.client.model.Response;
@@ -183,5 +184,12 @@ public class HttpClientTest {
         }
 
         while (true) ;
+    }
+
+    @Test
+    public void testMethod(){
+        HttpClient<JSONObject> client = new HttpClient<>();
+        JSONObject object = client.get("http://xpaas-runtime-service.iot-qa.rootcloudapp.com/runtime/metric/get-route-list-info",null,null);
+        System.out.println(object);
     }
 }
