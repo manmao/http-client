@@ -5,7 +5,6 @@ import org.apache.http.HttpRequest;
 import org.apache.http.NoHttpResponseException;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,11 +57,6 @@ public class SimpleHttpRequestRetryHandler implements HttpRequestRetryHandler {
             logger.error("server host unknown", e);
             return false;
         }
-        if (e instanceof ConnectTimeoutException) {
-            // 连接超时
-            logger.error("Connection Time out", e);
-            return false;
-        }
         if (e instanceof SSLException) {
             logger.error("SSLException", e);
             return false;
@@ -71,9 +65,6 @@ public class SimpleHttpRequestRetryHandler implements HttpRequestRetryHandler {
         HttpClientContext httpContext = HttpClientContext.adapt(context);
         HttpRequest request = httpContext.getRequest();
         // 如果请求不是关闭连接的请求
-        if (!(request instanceof HttpEntityEnclosingRequest)) {
-            return true;
-        }
-        return false;
+        return !(request instanceof HttpEntityEnclosingRequest);
     }
 }

@@ -9,9 +9,10 @@ import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultClientConnectionReuseStrategy;
+import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.omg.CORBA.TIMEOUT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +76,7 @@ public class HttpConnectionPool {
     /**
      * 获取httpClient单例，并且第一次获取，启动连接池管理任务，默认配置
      *
-     * @return
+     * @return httpclient
      */
     public static CloseableHttpClient getHttpClientInstance() {
         return getHttpClientInstance(new PoolConfig(DEFAULT_MAX_CONN, DEFAULT_MAX_PRE_ROUTE, DEFAULT_CONNECTION_IDLE_TIMEOUT, DEFAULT_CONNECTION_EXPIRED_TIME));
@@ -88,7 +89,7 @@ public class HttpConnectionPool {
      *    默认重试handler
      * </p>
      * @param config http连接池客户端
-     * @return
+     * @return httpclient
      */
     public static CloseableHttpClient getHttpClientInstance(PoolConfig config) {
         // 请求失败时,进行请求重试
@@ -102,7 +103,7 @@ public class HttpConnectionPool {
      *
      * @param config  http连接池客户端
      * @param handler 重试handler
-     * @return
+     * @return httpclient
      */
     public static CloseableHttpClient getHttpClientInstance(PoolConfig config, HttpRequestRetryHandler handler) {
         if (httpClient == null) {
@@ -141,7 +142,7 @@ public class HttpConnectionPool {
     /**
      * 构造连接池管理器，生成http client
      *
-     * @return
+     * @return httpclient
      */
     private static CloseableHttpClient createHttpClient(PoolConfig config, HttpRequestRetryHandler handler) {
 
@@ -157,10 +158,13 @@ public class HttpConnectionPool {
         // 设置路由默认最大连接数
         connectionManager.setDefaultMaxPerRoute(config.getMaxPerRouteConnections());
 
-
-
-        CloseableHttpClient client = HttpClients.custom().setConnectionManager(connectionManager).setRetryHandler(handler).build();
-        return client;
+        return HttpClients.custom()
+                .setConnectionManager(connectionManager)
+                // 设置保活策略
+                .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())
+                // 设置连接重用策略
+                .setConnectionReuseStrategy(new DefaultClientConnectionReuseStrategy())
+                .setRetryHandler(handler).build();
     }
 
     /**

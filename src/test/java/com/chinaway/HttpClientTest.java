@@ -189,7 +189,7 @@ public class HttpClientTest {
     @Test
     public void testMethod(){
         HttpClient<JSONObject> client = new HttpClient<>();
-        JSONObject object = client.get("http://xpaas-runtime-service.iot-qa.rootcloudapp.com/runtime/metric/get-route-list-info",null,null);
+        JSONObject object = client.get("http://127.0.0.1:8080/runtime/metric/get-route-list-info",null,null);
         System.out.println(object);
     }
 }

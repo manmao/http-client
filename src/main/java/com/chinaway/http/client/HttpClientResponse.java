@@ -40,9 +40,8 @@ public class HttpClientResponse<T> {
      * @return 如果异常会返回为空
      */
     public Response<T> post(String url, String body, Map<String, String> headers) {
-        JSONObject response = client.post(url, body, headers);
         try {
-            return JSON.parseObject(response.toJSONString(), new TypeReference<Response<T>>() {
+            return JSON.parseObject(client.post(url, body, headers).toJSONString(), new TypeReference<Response<T>>() {
             });
         } catch (Exception e) {
             logger.error("http返回结果反序列化对象失败,url:{}", url, e);
@@ -59,9 +58,8 @@ public class HttpClientResponse<T> {
      * @return 如果异常会返回为空
      */
     public Response<T> post(String url, Map<String, String> params, Map<String, String> headers) {
-        JSONObject response = client.post(url, params, headers);
         try {
-            return JSON.parseObject(response.toJSONString(), new TypeReference<Response<T>>() {
+            return JSON.parseObject(client.post(url, params, headers).toJSONString(), new TypeReference<Response<T>>() {
             });
         } catch (Exception e) {
             logger.error("http返回结果反序列化对象失败,url:{}", url, e);
