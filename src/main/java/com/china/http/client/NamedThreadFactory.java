@@ -1,4 +1,4 @@
-package com.chinaway.http.client;
+package com.china.http.client;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
