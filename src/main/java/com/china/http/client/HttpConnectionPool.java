@@ -16,7 +16,6 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.TimerTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -114,17 +113,17 @@ public class HttpConnectionPool implements AutoCloseable {
     private void startManagerMonitor(final PoolConfig config) {
         if (monitorExecutor == null) {
             monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory());
-            monitorExecutor.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    //关闭过期连接
-                    connectionManager.closeExpiredConnections();
-                    //关闭5s空闲的连接
-                    connectionManager.closeIdleConnections(config.getIdleTimeout(), TimeUnit.MILLISECONDS);
-                    logger.info("close expired and idle for over 10 s connection,current pool stats:{}", connectionManager.getTotalStats().toString());
-                }
-            }, 1000, 10000, TimeUnit.MILLISECONDS);
         }
+        monitorExecutor.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                //关闭过期连接
+                connectionManager.closeExpiredConnections();
+                //关闭5s空闲的连接
+                connectionManager.closeIdleConnections(config.getIdleTimeout(), TimeUnit.MILLISECONDS);
+                logger.info("close expired and idle for over 10 s connection,current pool stats:{}", connectionManager.getTotalStats().toString());
+            }
+        }, 1000, 10000, TimeUnit.MILLISECONDS);
     }
 
 

@@ -99,7 +99,7 @@ public class HttpClient implements AutoCloseable {
     }
 
     /**
-     * get请求返回string
+     * GET请求返回string
      *
      * @param url     请求地址
      * @param params  请求参数
@@ -116,7 +116,7 @@ public class HttpClient implements AutoCloseable {
     }
 
     /**
-     * post请求返回string
+     * POST 请求返回string
      *
      * @param url     请求地址
      * @param params  请求参数
@@ -128,7 +128,7 @@ public class HttpClient implements AutoCloseable {
     }
 
     /**
-     * post请求返回string
+     * POST 请求返回string
      *
      * @param url     请求地址
      * @param headers 请求头部参数
@@ -139,7 +139,7 @@ public class HttpClient implements AutoCloseable {
     }
 
     /**
-     * post请求返回string
+     * POST 请求返回string
      *
      * @param url     请求地址
      * @param headers 请求头部参数
@@ -162,7 +162,7 @@ public class HttpClient implements AutoCloseable {
 
 
     /**
-     * put请求返回string
+     * PUT 请求返回string
      *
      * @param url     请求地址
      * @param params  请求参数
@@ -292,7 +292,7 @@ public class HttpClient implements AutoCloseable {
 
 
     /**
-     * 构造HTTP GET 对象
+     * 构造HTTP PUT 对象
      *
      * @param url     地址
      * @param params  参数
