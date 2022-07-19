@@ -1,7 +1,6 @@
-package com.chinaway.http.client;
+package com.china.http.client;
 
-import com.alibaba.fastjson.JSON;
-import com.chinaway.http.client.model.PoolConfig;
+import com.china.http.client.model.PoolConfig;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,11 +31,10 @@ import java.util.Map;
 /**
  * HttpClient
  *
- * @param <T> JSON 反序列化模型
  * @author manmao
  * @since 2019-03-11
  */
-public class HttpClient<T> {
+public class HttpClient implements AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpClient.class);
 
@@ -54,7 +53,14 @@ public class HttpClient<T> {
      */
     private static final int SOCKET_TIMEOUT = 5000;
 
+
     private final CloseableHttpClient closeableHttpClient;
+
+
+    /**
+     * http连接池配置
+     */
+    private final HttpConnectionPool httpConnectionPool = new HttpConnectionPool();
 
     /**
      * 连接超时时间
@@ -68,76 +74,28 @@ public class HttpClient<T> {
 
 
     public HttpClient() {
-        closeableHttpClient = HttpConnectionPool.getHttpClientInstance();
+        closeableHttpClient = httpConnectionPool.createHttpClientInstance();
         connectionTimeout = CONNECT_TIMEOUT;
         socketReadTimeout = SOCKET_TIMEOUT;
     }
 
     public HttpClient(PoolConfig config) {
-        closeableHttpClient = HttpConnectionPool.getHttpClientInstance(config);
-        connectionTimeout = config.getConnectionTimeout() == 0 ? CONNECT_TIMEOUT :config.getConnectionTimeout();
-        socketReadTimeout = config.getSocketReadTimeout() == 0 ? SOCKET_TIMEOUT:config.getSocketReadTimeout();
+        closeableHttpClient = httpConnectionPool.createHttpClientInstance(config);
+        connectionTimeout = config.getConnectionTimeout() == 0 ? CONNECT_TIMEOUT : config.getConnectionTimeout();
+        socketReadTimeout = config.getSocketReadTimeout() == 0 ? SOCKET_TIMEOUT : config.getSocketReadTimeout();
     }
 
     /**
      * 自定义pool配置和重试handler
      *
-     * @param config  路由配置
-     * @param requestRetryHandler  重试handler
-     *  @see com.chinaway.http.client.SimpleHttpRequestRetryHandler
+     * @param config              路由配置
+     * @param requestRetryHandler 重试handler
+     * @see SimpleHttpRequestRetryHandler
      */
     public HttpClient(PoolConfig config, HttpRequestRetryHandler requestRetryHandler) {
-        closeableHttpClient = HttpConnectionPool.getHttpClientInstance(config, requestRetryHandler);
-        connectionTimeout = config.getConnectionTimeout() == 0 ? CONNECT_TIMEOUT :config.getConnectionTimeout();
-        socketReadTimeout = config.getSocketReadTimeout() == 0 ? SOCKET_TIMEOUT:config.getSocketReadTimeout();
-    }
-
-    /**
-     * http post请求
-     *
-     * @param url     请求地址
-     * @param params  请求参数
-     * @param headers 请求参数
-     * @return 如果异常会返回为空
-     */
-    public T post(String url, Map<String, String> params, Map<String, String> headers) {
-        return this.post(url, params, null, headers);
-    }
-
-    /**
-     * http post请求
-     *
-     * @param url     请求地址
-     * @param body    请求消息体
-     * @param headers 请求头部参数
-     * @return 如果异常会返回为空
-     */
-    public T post(String url, String body, Map<String, String> headers) {
-        return this.post(url, null, body, headers);
-    }
-
-
-    /**
-     * http get请求
-     *
-     * @param url     请求地址
-     * @param params  请求参数
-     * @param headers 请求头部参数
-     * @return 如果异常会返回为空
-     */
-    public T get(String url, Map<String, String> params, Map<String, String> headers) {
-        if (StringUtils.isBlank(url)) {
-            logger.error("请求url为空!!!!");
-            return null;
-        }
-        HttpGet httpGet = this.buildHttpGetInstance(url, params, headers);
-        String result = this.executeRequest(httpGet);
-        try {
-            return JSON.parseObject(result, getClass().getGenericSuperclass());
-        } catch (Exception e) {
-            logger.error("请求结果返回值反序列化对象失败,url:{}", url, e);
-        }
-        return null;
+        closeableHttpClient = httpConnectionPool.createHttpClientInstance(config, requestRetryHandler);
+        connectionTimeout = config.getConnectionTimeout() == 0 ? CONNECT_TIMEOUT : config.getConnectionTimeout();
+        socketReadTimeout = config.getSocketReadTimeout() == 0 ? SOCKET_TIMEOUT : config.getSocketReadTimeout();
     }
 
     /**
@@ -154,40 +112,7 @@ public class HttpClient<T> {
             return null;
         }
         HttpGet httpGet = this.buildHttpGetInstance(url, params, headers);
-        String result = this.executeRequest(httpGet);
-        return result;
-    }
-
-    /**
-     * post http 请求
-     * params 和 body 参数必须传一个，如果同时传，优先使用body参数作为http请求参数
-     *
-     * @param url     请求地址
-     * @param params  请求key&value参数体
-     * @param body    请求String消息体
-     * @param headers 头部参数
-     * @return 返回JSON反序列化成T的对象，如果异常，将会返回null
-     */
-    private T post(String url, Map<String, String> params, String body, Map<String, String> headers) {
-        if (StringUtils.isBlank(url)) {
-            logger.error("请求url为空!!!!");
-            return null;
-        }
-        HttpPost httpPost;
-        if (StringUtils.isNotBlank(body)) {
-            httpPost = this.buildHttpPostInstance(url, null, body, headers);
-        } else {
-            httpPost = this.buildHttpPostInstance(url, params, null, headers);
-        }
-
-        String result = this.executeRequest(httpPost);
-
-        try {
-            return JSON.parseObject(result, getClass().getGenericSuperclass());
-        } catch (Exception e) {
-            logger.error("请求结果返回值反序列化对象失败,url:{}", url, e);
-        }
-        return null;
+        return this.executeRequest(httpGet);
     }
 
     /**
@@ -220,9 +145,9 @@ public class HttpClient<T> {
      * @param headers 请求头部参数
      * @return 如果异常返回空
      */
-    private String postForString(String url, Map<String, String> params, String body, Map<String, String> headers) {
+    public String postForString(String url, Map<String, String> params, String body, Map<String, String> headers) {
         if (StringUtils.isBlank(url)) {
-            logger.error("请求url为空!!!!");
+            logger.error("request url is blank !!!!");
             return null;
         }
         HttpPost httpPost;
@@ -232,8 +157,25 @@ public class HttpClient<T> {
             httpPost = this.buildHttpPostInstance(url, params, null, headers);
         }
 
-        String result = this.executeRequest(httpPost);
-        return result;
+        return this.executeRequest(httpPost);
+    }
+
+
+    /**
+     * put请求返回string
+     *
+     * @param url     请求地址
+     * @param params  请求参数
+     * @param headers 请求头部参数
+     * @return 如果异常返回空
+     */
+    public String putForString(String url, Map<String, String> params, Map<String, String> headers) {
+        if (StringUtils.isBlank(url)) {
+            logger.error("请求url为空!!!!");
+            return null;
+        }
+        HttpPut httpPut = this.buildHttpPutInstance(url, params, headers);
+        return this.executeRequest(httpPut);
     }
 
 
@@ -267,8 +209,8 @@ public class HttpClient<T> {
             } catch (IOException e) {
                 logger.error("关闭输入流异常,url:{}", httpRequest.getURI(), e);
             }
-            return result;
         }
+        return result;
     }
 
 
@@ -283,14 +225,14 @@ public class HttpClient<T> {
     private HttpPost buildHttpPostInstance(String url, Map<String, String> params, String body, Map<String, String> headers) {
 
         HttpPost httpPost = new HttpPost(url);
-        /** 设置 http header */
+        /* 设置 http header */
         if (MapUtils.isNotEmpty(headers)) {
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 httpPost.addHeader(new BasicHeader(entry.getKey(), entry.getValue()));
             }
         }
 
-        /**
+        /*
          * 设置http post请求参数
          */
         if (MapUtils.isNotEmpty(params)) {
@@ -306,7 +248,7 @@ public class HttpClient<T> {
             }
         }
 
-        /**
+        /*
          * 如果body不为空,设置消息体
          */
         if (StringUtils.isNotBlank(body)) {
@@ -326,22 +268,12 @@ public class HttpClient<T> {
      * @param url     地址
      * @param params  参数
      * @param headers header
-     * @return
+     * @return Http对象
      */
     private HttpGet buildHttpGetInstance(String url, Map<String, String> params, Map<String, String> headers) {
         HttpGet httpGet;
         try {
-            URIBuilder uriBuilder = new URIBuilder(url);
-            /* 设置http get请求参数 */
-            if (MapUtils.isNotEmpty(params)) {
-                List<NameValuePair> nvps = new ArrayList<>();
-                for (Map.Entry<String, String> entry : params.entrySet()) {
-                    nvps.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
-                }
-                uriBuilder.setParameters(nvps);
-            }
-
-            httpGet = new HttpGet(uriBuilder.build());
+            httpGet = new HttpGet(createUri(url, params));
             /* 设置 http header */
             if (MapUtils.isNotEmpty(headers)) {
                 for (Map.Entry<String, String> entry : headers.entrySet()) {
@@ -360,6 +292,35 @@ public class HttpClient<T> {
 
 
     /**
+     * 构造HTTP GET 对象
+     *
+     * @param url     地址
+     * @param params  参数
+     * @param headers header
+     * @return Http对象
+     */
+    private HttpPut buildHttpPutInstance(String url, Map<String, String> params, Map<String, String> headers) {
+        HttpPut httpPut;
+        try {
+            httpPut = new HttpPut(createUri(url, params));
+            /* 设置 http put header */
+            if (MapUtils.isNotEmpty(headers)) {
+                for (Map.Entry<String, String> entry : headers.entrySet()) {
+                    httpPut.addHeader(new BasicHeader(entry.getKey(), entry.getValue()));
+                }
+            }
+            this.setRequestConfig(httpPut);
+        } catch (URISyntaxException e) {
+            logger.error("URL解析异常", e);
+            return null;
+        }
+        // 设置socket连接参数
+        this.setRequestConfig(httpPut);
+        return httpPut;
+    }
+
+
+    /**
      * 对http 网络连接进行基本设置
      *
      * @param httpRequestBase http
@@ -368,5 +329,37 @@ public class HttpClient<T> {
         RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(connectionTimeout)
                 .setConnectTimeout(connectionTimeout).setSocketTimeout(socketReadTimeout).build();
         httpRequestBase.setConfig(requestConfig);
+    }
+
+    /**
+     * 构造带参数的URL
+     *
+     * @param url    url
+     * @param params 参数
+     * @return URI
+     * @throws URISyntaxException uri格式异常
+     */
+    private URI createUri(String url, Map<String, String> params) throws URISyntaxException {
+        URIBuilder uriBuilder = new URIBuilder(url);
+        /* 设置http put请求参数 */
+        if (MapUtils.isNotEmpty(params)) {
+            List<NameValuePair> nvps = new ArrayList<>();
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                nvps.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+            }
+            uriBuilder.setParameters(nvps);
+        }
+        return uriBuilder.build();
+    }
+
+    @Override
+    public void close() {
+        try {
+            // 关闭连接池
+            httpConnectionPool.closeConnectionPool();
+            closeableHttpClient.close();
+        } catch (Exception ex) {
+            logger.error("close http client exception", ex);
+        }
     }
 }

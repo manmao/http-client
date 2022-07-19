@@ -1,4 +1,4 @@
-package com.chinaway.http.client;
+package com.china.http.client;
 
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;

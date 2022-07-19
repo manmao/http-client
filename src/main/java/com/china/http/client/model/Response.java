@@ -1,4 +1,4 @@
-package com.chinaway.http.client.model;
+package com.china.http.client.model;
 
 /**
  * Response
