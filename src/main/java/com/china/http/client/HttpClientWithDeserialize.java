@@ -16,7 +16,7 @@ import java.util.Map;
  * @author manmao
  * @since 2019-03-12
  */
-public class HttpClientWithDeserialize<T> {
+public class HttpClientWithDeserialize<T> implements AutoCloseable{
 
     private static final Logger logger = LoggerFactory.getLogger(HttpClientWithDeserialize.class);
 
@@ -28,44 +28,6 @@ public class HttpClientWithDeserialize<T> {
 
     public HttpClientWithDeserialize(PoolConfig config) {
         client = new HttpClient(config);
-    }
-
-
-    /**
-     * http post请求
-     *
-     * @param url     请求地址
-     * @param params  请求参数
-     * @param headers 请求头部参数
-     * @return 如果异常会返回为空
-     */
-    public Response<T> postResponse(String url, Map<String, String> params, Map<String, String> headers) {
-        try {
-            return JacksonUtils.json2TypeReference(client.postForString(url, params, headers), new TypeReference<Response<T>>() {
-            });
-        } catch (Exception e) {
-            logger.error("http返回结果反序列化对象失败,url:{}", url, e);
-            return null;
-        }
-    }
-
-
-    /**
-     * http get请求
-     *
-     * @param url     请求地址
-     * @param params  请求参数
-     * @param headers 请求头部参数
-     * @return 如果异常会返回为空
-     */
-    public Response<T> getResponse(String url, Map<String, String> params, Map<String, String> headers) {
-        try {
-            return JacksonUtils.json2TypeReference(client.getForString(url, params, headers), new TypeReference<Response<T>>() {
-            });
-        } catch (Exception e) {
-            logger.error("http返回结果反序列化对象失败,url:{}", url, e);
-            return null;
-        }
     }
 
     /**
@@ -102,8 +64,9 @@ public class HttpClientWithDeserialize<T> {
      * @return 如果异常会返回为空
      */
     public T get(String url, Map<String, String> params, Map<String, String> headers) {
-        String result =  client.getForString(url,params,headers);
-        TypeReference<T> typeReference = new TypeReference<T>(){};
+        String result = client.getForString(url, params, headers);
+        TypeReference<T> typeReference = new TypeReference<T>() {
+        };
         try {
             return JacksonUtils.json2TypeReference(result, typeReference);
         } catch (Exception e) {
@@ -126,11 +89,68 @@ public class HttpClientWithDeserialize<T> {
         String result = client.postForString(url, params, body, headers);
 
         try {
-            return JacksonUtils.json2TypeReference(result, new TypeReference<T>(){});
+            return JacksonUtils.json2TypeReference(result, new TypeReference<T>() {
+            });
         } catch (Exception e) {
             logger.error("请求结果返回值反序列化对象失败,url:{}", url, e);
         }
         return null;
     }
 
+
+    public T put(String url, Map<String, String> params,String body, Map<String, String> headers){
+        try {
+            return JacksonUtils.json2TypeReference(client.postForString(url, params, headers), new TypeReference<T>() {
+            });
+        } catch (Exception e) {
+            logger.error("http返回结果反序列化对象失败,url:{}", url, e);
+            return null;
+        }
+    }
+
+    /**
+     * http post请求
+     *
+     * @param url     请求地址
+     * @param params  请求参数
+     * @param headers 请求头部参数
+     * @return 如果异常会返回为空
+     */
+    public Response<T> postResponse(String url, Map<String, String> params, Map<String, String> headers) {
+        try {
+            return JacksonUtils.json2TypeReference(client.postForString(url, params, headers), new TypeReference<Response<T>>() {
+            });
+        } catch (Exception e) {
+            logger.error("http返回结果反序列化对象失败,url:{}", url, e);
+            return null;
+        }
+    }
+
+
+
+
+
+    /**
+     * http get请求
+     *
+     * @param url     请求地址
+     * @param params  请求参数
+     * @param headers 请求头部参数
+     * @return 如果异常会返回为空
+     */
+    public Response<T> getResponse(String url, Map<String, String> params, Map<String, String> headers) {
+        try {
+            return JacksonUtils.json2TypeReference(client.getForString(url, params, headers), new TypeReference<Response<T>>() {
+            });
+        } catch (Exception e) {
+            logger.error("http返回结果反序列化对象失败,url:{}", url, e);
+            return null;
+        }
+    }
+
+
+    @Override
+    public void close() throws Exception {
+        client.close();
+    }
 }

@@ -169,12 +169,12 @@ public class HttpClient implements AutoCloseable {
      * @param headers 请求头部参数
      * @return 如果异常返回空
      */
-    public String putForString(String url, Map<String, String> params, Map<String, String> headers) {
+    public String putForString(String url, Map<String, String> params, String body, Map<String, String> headers) {
         if (StringUtils.isBlank(url)) {
             logger.error("请求url为空!!!!");
             return null;
         }
-        HttpPut httpPut = this.buildHttpPutInstance(url, params, headers);
+        HttpPut httpPut = this.buildHttpPutInstance(url, params, body, headers);
         return this.executeRequest(httpPut);
     }
 
@@ -296,24 +296,42 @@ public class HttpClient implements AutoCloseable {
      *
      * @param url     地址
      * @param params  参数
+     * @param body    消息体
      * @param headers header
      * @return Http对象
      */
-    private HttpPut buildHttpPutInstance(String url, Map<String, String> params, Map<String, String> headers) {
-        HttpPut httpPut;
-        try {
-            httpPut = new HttpPut(createUri(url, params));
-            /* 设置 http put header */
-            if (MapUtils.isNotEmpty(headers)) {
-                for (Map.Entry<String, String> entry : headers.entrySet()) {
-                    httpPut.addHeader(new BasicHeader(entry.getKey(), entry.getValue()));
-                }
+    private HttpPut buildHttpPutInstance(String url, Map<String, String> params, String body, Map<String, String> headers) {
+        HttpPut httpPut = new HttpPut(url);
+        /* 设置 http header */
+        if (MapUtils.isNotEmpty(headers)) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                httpPut.addHeader(new BasicHeader(entry.getKey(), entry.getValue()));
             }
-            this.setRequestConfig(httpPut);
-        } catch (URISyntaxException e) {
-            logger.error("URL解析异常", e);
-            return null;
         }
+
+        /*
+         * 设置http post请求参数
+         */
+        if (MapUtils.isNotEmpty(params)) {
+            try {
+                List<NameValuePair> nvps = new ArrayList<>();
+                for (Map.Entry<String, String> entry : params.entrySet()) {
+                    nvps.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+                }
+                httpPut.setEntity(new UrlEncodedFormEntity(nvps, DEFAULT_CHARSET));
+            } catch (UnsupportedEncodingException e) {
+                logger.error("编码http参数异常", e);
+                return null;
+            }
+        }
+
+        /*
+         * 如果body不为空,设置消息体
+         */
+        if (StringUtils.isNotBlank(body)) {
+            httpPut.setEntity(new StringEntity(body, DEFAULT_CHARSET));
+        }
+
         // 设置socket连接参数
         this.setRequestConfig(httpPut);
         return httpPut;
